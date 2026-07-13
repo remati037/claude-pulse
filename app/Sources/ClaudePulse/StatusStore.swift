@@ -25,6 +25,15 @@ extension Settings {
         case .desktop: return desktop
         }
     }
+
+    /// Mutacija per-source podešavanja po `Source` enumu (npr. flip `enabled` iz menija).
+    mutating func updateSource(_ source: Source, _ mutate: (inout SourceSettings) -> Void) {
+        switch source {
+        case .code: mutate(&code)
+        case .web: mutate(&web)
+        case .desktop: mutate(&desktop)
+        }
+    }
 }
 
 /// Jedinstveni izvor istine za stanje sva tri slota + state machine iz §2.3.

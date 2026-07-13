@@ -108,3 +108,32 @@ autonomnu verifikaciju.
 ostaje trajni dev/QA mehanizam za verifikaciju state machine-a bez čekanja minutima.
 Napomena: za env override app se pokreće direktno preko `ClaudePulse.app/Contents/MacOS/…`
 (a ne `open`, koji ne prosleđuje env) — `Bundle.main` i dalje pokazuje na `.app` bundle.
+
+---
+
+## ADR-007 — Menu bar rendering i meni (Phase 2)
+
+**Status:** Prihvaćeno (2026-07-13, Phase 2)
+
+**Kontekst:** §3.1 nalaže da se u Phase 2 potvrdi da li `MenuBarExtra` može da renderuje
+attributed-string naslov iz §3.2 (obojene tačke `C● W● D✕`), inače ostaje `NSStatusItem`
+(ADR-002). Takođe treba pun meni iz §3.3 sa live osvežavanjem stanja i relativnog vremena.
+
+**Odluka:**
+1. **`NSStatusItem` + `button.attributedTitle`** — potvrđeno da renderuje obojene tačke
+   (system boje `.systemRed/.systemOrange/.systemGreen`, slova u `.labelColor`) i da
+   auto-adaptira na light/dark menu bar. Ostajemo pri `NSStatusItem` (ADR-002 potvrđen);
+   `MenuBarExtra` se ne uvodi.
+2. **Meni se puni lenjo u `NSMenuDelegate.menuNeedsUpdate`** umesto jednom pri startu →
+   stanja, relativno vreme i checkmark-ovi su sveži pri svakom otvaranju bez ručne
+   invalidacije. Ikona se odvojeno re-renderuje live preko `statusStore.onChange`.
+   Source se prenosi do handlera preko `NSMenuItem.representedObject` (`source.rawValue`).
+3. **"Display Mode" submeni u meniju** (Compact / Icon-only) kao odstupanje od §3.3 —
+   dogovoreno sa korisnikom (2026-07-13) jer Settings prozor (§3.4) stiže tek u Phase 3.
+   Deli isti `settings.displayMode`, pa Settings prozor kasnije samo dodaje drugi ulaz.
+4. **Stavke zavisne od Phase 3** (Settings…, Setup Guide…, Launch at Login, Test
+   notification) prikazane **disabled** → finalni §3.3 layout odmah, žice po fazama.
+
+**Posledice:** Prezentacioni sloj bez novih zavisnosti. Disabled izvor se renderuje kao
+`inactive` (§1.2) preko `StatusRendering.effectiveState`. Čist mapping stanje→boja/glyph/tekst
+je centralizovan u `StatusRendering` i dele ga ikona i redovi menija.
