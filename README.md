@@ -54,6 +54,27 @@ ostaju netaknuti. Re-run je idempotentan (bez duplikata). Zahteva `jq` (`brew in
 Backup se pravi kao `~/.claude/settings.json.backup-<timestamp>`; ručno vraćanje:
 `cp ~/.claude/settings.json.backup-<timestamp> ~/.claude/settings.json`.
 
+## Browser ekstenzija (claude.ai)
+
+Da `W` slot reaguje na claude.ai u browseru, učitaj MV3 ekstenziju iz `extension/`.
+Radi u bilo kom Chromium browseru (**Brave**, Chrome, Edge…).
+
+**Brave:** otvori `brave://extensions` → uključi **Developer mode** (gore desno) →
+**Load unpacked** → izaberi folder `extension/`. (Chrome: isto na `chrome://extensions`.)
+
+Kad je app upaljen i otvoriš claude.ai: `W` postaje crveno dok Claude generiše i zeleno
+≤3 s po završetku. Više tabova se agregira — `W` je crveno dok bar jedan tab radi.
+
+**Badge na ikoni:** siva tačka `•` znači da ekstenzija ne može da dođe do app-a
+(ClaudePulse nije upaljen ili je port pogrešan). Bez badge-a = povezano.
+
+**Podešavanja** (desni klik na ikonu → Options): promeni **port** (mora se poklapati sa
+ClaudePulse → Settings) i **CSS selektore** za „stop generation" dugme — ako claude.ai
+promeni UI pa detekcija stane, ispravi selektor ovde bez čekanja nove verzije ekstenzije.
+Default selektor: `button[aria-label*="Stop"]`.
+
+Ikone se generišu skriptom: `python3 scripts/gen-extension-icons.py`.
+
 ## Instalacija za korisnike
 
 Dolazi u Phase 7 (GitHub Release + one-line installer). Zasad samo dev build gore.

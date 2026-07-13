@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="utf-8">
+    <title>ClaudePulse — podešavanja</title>
+    <style>
+        :root { color-scheme: light dark; }
+        body { font: 14px/1.5 -apple-system, system-ui, sans-serif; margin: 24px; max-width: 560px; }
+        h1 { font-size: 18px; margin: 0 0 4px; }
+        p.sub { margin: 0 0 20px; opacity: 0.7; }
+        label { display: block; font-weight: 600; margin: 18px 0 6px; }
+        textarea, input { width: 100%; box-sizing: border-box; font: inherit; padding: 8px;
+            border: 1px solid rgba(128,128,128,0.4); border-radius: 6px; background: transparent; color: inherit; }
+        textarea { min-height: 90px; font-family: ui-monospace, monospace; resize: vertical; }
+        input[type="number"] { width: 120px; }
+        small { opacity: 0.65; display: block; margin-top: 4px; }
+        .row { margin-top: 24px; display: flex; gap: 10px; align-items: center; }
+        button { font: inherit; padding: 8px 16px; border-radius: 6px; border: 1px solid rgba(128,128,128,0.4);
+            background: transparent; color: inherit; cursor: pointer; }
+        button.primary { background: #d0342c; color: #fff; border-color: #d0342c; }
+        #status { margin-left: auto; opacity: 0.8; }
+        #health { margin-top: 20px; padding: 10px 12px; border-radius: 6px;
+            border: 1px solid rgba(128,128,128,0.3); }
+    </style>
+</head>
+<body>
+    <h1>ClaudePulse</h1>
+    <p class="sub">Podešavanja ekstenzije za claude.ai.</p>
+
+    <label for="selectors">CSS selektori za „stop generation" dugme</label>
+    <textarea id="selectors" spellcheck="false"></textarea>
+    <small>Jedan selektor po liniji. Prisustvo bilo kog = Claude generiše (busy). Promeni ovde ako
+        claude.ai promeni UI, bez čekanja nove verzije ekstenzije.</small>
+
+    <label for="port">Port app-a</label>
+    <input id="port" type="number" min="1" max="65535">
+    <small>Mora se poklapati sa portom u ClaudePulse → Settings (default 4242).</small>
+
+    <div id="health">Provera veze…</div>
+
+    <div class="row">
+        <button id="save" class="primary">Sačuvaj</button>
+        <button id="reset">Reset na default</button>
+        <span id="status"></span>
+    </div>
+
+    <script src="options.js"></script>
+</body>
+</html>

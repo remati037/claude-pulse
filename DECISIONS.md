@@ -244,3 +244,38 @@ pokretanje bez duplikata.
 Cena: marker mora ostati stabilan string (menjanje bi „osirotelo" stare hookove — tada ih uklanja
 ručni uninstall stare verzije). Verifikacija busy→waiting→done ciklusa je interaktivna (realna
 Claude Code sesija), ostalo (merge/idempotencija/uninstall/port) autonomno na izolovanoj kopiji.
+
+## ADR-012 — Browser ekstenzija: service worker vlasnik HTTP-a, efemeran MV3 SW (Phase 6)
+
+**Status:** Prihvaćeno (2026-07-13, Phase 6)
+
+**Kontekst:** `W` slot treba da reaguje na claude.ai u browseru (§2.5). MV3 ekstenzija detektuje
+prisustvo „stop generation" dugmeta u DOM-u i javlja app-u preko `POST /status` (`source:"web"`).
+Problem: `HTTPServer` (ADR-003) **ne šalje CORS header-e niti odgovara na OPTIONS**. Fetch iz
+content script-a (origin `https://claude.ai`) ka `127.0.0.1` bi pokrenuo CORS preflight (server
+vrati 404) + Private Network Access blokadu → pada. Uz to, port je konfigurabilan (Settings), a
+`host_permissions` u manifestu su statični.
+
+**Odluka:**
+- **Content script SAMO posmatra DOM; sav HTTP ide iz service worker-a.** Content script šalje
+  `chrome.runtime.sendMessage({type:"status", state})`, SW radi `fetch`. Extension-inicirani
+  zahtev sa `host_permissions` **nije podložan CORS-u** ni PNA — nula izmena na Swift strani.
+  Bonus: SW je prirodno mesto za agregaciju više tabova (§2.5).
+- **Efemeran MV3 SW** (gasi se ~30 s neaktivnosti) → mapa `tabId→busy` živi u
+  `chrome.storage.session` (preživi gašenje), a health polling ide preko `chrome.alarms`
+  (setInterval ne preživi spavanje). Health backoff: 0.5→1→2→4→5 (cap) min kad app ne radi.
+- **`host_permissions: ["http://127.0.0.1/*"]`** — wildcard **bez porta** (match pattern ignoriše
+  port) pokriva bilo koji konfigurisan port bez republish-a. Rešava §3.4 „custom port".
+- **Konfigurabilni selektori + port u `chrome.storage.sync`** (Options stranica), default
+  `button[aria-label*="Stop"]`. Isto obrazloženje kao AX label override (ADR-010): preživeti UI
+  promene claude.ai bez nove verzije ekstenzije. Live update preko `storage.onChanged`.
+- **Samo `busy`/`done` iz browsera u v1** — nema pouzdanog DOM signala za `waiting`
+  (permission-prompt je Claude Code specifičan). Debounce 2 s pre `done` (dugme nestane između
+  tool-poziva/artifakata → lažni done bez debounce-a). Busy heartbeat ~30 s osvežava TTL.
+
+**Posledice:** Zero-touch na serveru; ekstenzija je browser-agnostična (plain `fetch`, testira se
+kao unpacked u Brave-u — nema Chrome-a na mašini). Cena: SW state je async (storage.session)
+umesto in-memory, pa svaki handler čita/piše storage. Detekcija app-down ima do ~30 s latencije
+(health interval), ali `post()` na grešci odmah sivi badge. Verifikacija busy/done ciklusa,
+multi-tab i lažni-done su interaktivni (realna claude.ai sesija); kontrakt (`web/busy`, `web/done`)
+i manifest lint autonomni curl-om.
