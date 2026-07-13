@@ -9,7 +9,18 @@
       "Bash(git commit -q -m 'Mark Phase 0 complete in progress tracker *)",
       "Bash(git push *)",
       "Bash(git ls-remote *)",
-      "Bash(git commit -q -m 'Add git push permission to project settings *)"
+      "Bash(git commit -q -m 'Add git push permission to project settings *)",
+      "Bash(swift build *)",
+      "Bash(pkill -f \"ClaudePulse.app/Contents/MacOS/ClaudePulse\")",
+      "Bash(open ClaudePulse.app)",
+      "Bash(:)",
+      "Bash(CLAUDEPULSE_TTL_SECONDS=3 CLAUDEPULSE_DONE_RESET_SECONDS=2 CLAUDEPULSE_STUCK_SECONDS=4 ./ClaudePulse.app/Contents/MacOS/ClaudePulse)",
+      "Bash(curl -s -o /dev/null -X POST localhost:4242/status -d '{\"source\":\"code\",\"state\":\"done\"}')",
+      "Bash(curl -s -o /dev/null -X POST localhost:4242/status -d '{\"source\":\"web\",\"state\":\"busy\"}')",
+      "Bash(curl -s -o /dev/null -X POST localhost:4242/status -d '{\"source\":\"code\",\"state\":\"busy\"}')",
+      "Read(//Users/marko/Library/Logs/ClaudePulse/**)",
+      "Bash(curl -s localhost:4242/health)",
+      "Bash(git commit *)"
     ]
   }
 }

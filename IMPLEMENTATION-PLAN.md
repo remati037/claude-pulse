@@ -91,7 +91,7 @@ Svaka faza: implementiraj → verifikuj sam → **checkpoint poruka korisniku** 
 Kad se faza završi, štiklirati ovde:
 
 - [x] Phase 0 — Scaffold
-- [ ] Phase 1 — StatusStore + HTTP server
+- [x] Phase 1 — StatusStore + HTTP server
 - [ ] Phase 2 — Menu bar UI + meni
 - [ ] Phase 3 — Notifikacije, zvuci, Settings, onboarding
 - [ ] Phase 4 — Desktop watcher (AX)
