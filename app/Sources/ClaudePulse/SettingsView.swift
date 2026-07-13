@@ -7,6 +7,7 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @ObservedObject var store: SettingsStore
     let soundPlayer: SoundPlayer
+    let desktopWatcher: DesktopWatcher
 
     var body: some View {
         TabView {
@@ -82,14 +83,35 @@ struct SettingsView: View {
                     Toggle("Notify on done", isOn: binding(kp.appending(path: \.notifyOnDone)))
                     Toggle("Notify on waiting", isOn: binding(kp.appending(path: \.notifyOnWaiting)))
                     if source == .desktop {
-                        Text("Accessibility detection is configured in Phase 4.")
-                            .font(.caption).foregroundStyle(.secondary)
+                        desktopAXControls
                     }
                 }
             }
         }
         .formStyle(.grouped)
         .padding()
+    }
+
+    /// Desktop-only AX kontrole (§2.4 / §3.4 Sources): permission status + grant, poll, label override.
+    @ViewBuilder
+    private var desktopAXControls: some View {
+        HStack {
+            Text("Accessibility permission")
+            Spacer()
+            if desktopWatcher.axPermissionGranted {
+                Label("Granted", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+            } else {
+                Label("Not granted", systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+            }
+        }
+        if !desktopWatcher.axPermissionGranted {
+            Button("Grant Accessibility permission…") { desktopWatcher.requestPermission() }
+        }
+        Stepper("Poll interval: \(store.settings.desktopPollSeconds) s",
+                value: binding(\.desktopPollSeconds), in: 1...10)
+        TextField("Stop-button label pattern", text: binding(\.desktopStopLabelPattern))
+        Text("Case-insensitive match on the Claude Desktop stop-generation button. Edit this if detection breaks after a Claude update — no app update needed.")
+            .font(.caption).foregroundStyle(.secondary)
     }
 
     // MARK: - Notifications

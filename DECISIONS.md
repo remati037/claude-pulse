@@ -173,3 +173,40 @@ registruju sam `.app` kao login item, bez helper bundle-a (macOS 13+ API).
 **Posledice:** Bez dodatnog helper target-a. Napomena: `register()` radi pouzdano tek kad je
 `.app` na stabilnoj lokaciji (npr. `/Applications`); iz repo foldera status može ostati
 `.requiresApproval` — ishod se loguje, korisnik odobrava u System Settings ▸ General ▸ Login Items.
+
+## ADR-010 — Desktop watcher preko Accessibility API-ja (Phase 4)
+
+**Status:** Prihvaćeno (2026-07-13, Phase 4)
+
+**Kontekst:** Claude Desktop je Electron app — nema hooks ni DOM pristup kao code/web izvori.
+Jedini in-process način da se detektuje „generiše / gotovo" je Accessibility (AX) API (§2.4).
+Bundle id potvrđen iz `/Applications/Claude.app/Contents/Info.plist`: `com.anthropic.claudefordesktop`.
+
+**Odluka:**
+- `DesktopWatcher` (@MainActor) poll-uje AX tree **samo dok Claude app radi** (prati
+  `NSWorkspace` launch/terminate notifikacije) → zero idle cost; feed ide kroz
+  `StatusStore.apply(source: .desktop, ...)`, sva state-machine logika ostaje u StatusStore-u.
+- **AXManualAccessibility=true** na app elementu (`AXUIElementCreateApplication(pid)`) — budi
+  Chromium da izgradi a11y tree; bez toga web sadržaj (uklj. stop dugme) često nije u AX-u.
+- Detekcija = bounded DFS kroz sve prozore app-a tražeći `AXButton` čiji spojeni tekst
+  (title/description/help/value) case-insensitive sadrži **label pattern iz Settings-a**
+  (`desktopStopLabelPattern`, default `"stop"`) — NIJE hardkodiran, da preživi promenu Anthropic
+  UI-ja bez update-a app-a. Node-budget cap (4000) protiv runaway obilaska ogromnog Electron tree-a.
+- Debounce: dugme odsutno **2 uzastopna poll-a** dok je bilo `busy` → `done`. Quit app-a → reset
+  na `inactive` (D ✕).
+- Bez AX dozvole (`AXIsProcessTrusted() == false`) → graceful degrade (D ostaje inactive) + menu
+  hint „Grant Accessibility permission…" (deep-link u System Settings) i grant dugme u Settings ▸ Sources.
+- **Diagnostic „Dump AX tree to log"** (desktop submeni) ispisuje sve `AXButton`-e u log — za
+  empirijsko otkrivanje pravog labela na živoj app.
+
+**Empirijski nalaz labela (live test 2026-07-13):** Detekcija **potvrđena** default pattern-om
+`"stop"` — dug prompt: `desktop: inactive → busy` u ~2 s, održavano svakih poll-a, pa `busy → done`
+kad dugme nestane (debounce 2 poll-a), + notifikacija; quit → `inactive`. AXManualAccessibility je
+neophodan (bez njega prozor nema web dugmad). Napomena: „Dump AX tree to log" hvata samo trenutno
+stanje — da bi se video tačan tekst stop dugmeta, dump mora da se pokrene **dok Claude generiše**
+(idle dump ga ne sadrži). Default `"stop"` je dovoljan; tačan string dokumentovati oportunistički
+ako zatreba fino podešavanje.
+
+**Posledice:** Radi i kad Claude nije frontmost (prozori dostupni preko pid-a) — pokriva glavni
+use-case (korisnik odlutao u drugu app). Poznato ograničenje (§2.4): minimizovan prozor —
+ponašanje dokumentovati posle live testa. Zavisi od AX dozvole (ADR-004: app nije sandboxovan).

@@ -27,7 +27,10 @@
       "Bash(curl -s -o /dev/null -w \"code busy: %{http_code}\\\\n\" -XPOST 127.0.0.1:4242/status -H 'Content-Type: application/json' -d '{\"source\":\"code\",\"state\":\"busy\"}')",
       "Bash(curl -s -o /dev/null -w \"web waiting: %{http_code}\\\\n\" -XPOST 127.0.0.1:4242/status -H 'Content-Type: application/json' -d '{\"source\":\"web\",\"state\":\"waiting\"}')",
       "Bash(curl -s -o /dev/null -w \"still alive health: %{http_code}\\\\n\" 127.0.0.1:4242/health)",
-      "Bash(git commit -q -m ' *)"
+      "Bash(git commit -q -m ' *)",
+      "Bash(pkill -f ClaudePulse.app)",
+      "Bash(grep -E \"AXButton|AX dump|DesktopWatcher|desktop:\" ~/Library/Logs/ClaudePulse/claudepulse.log | tail -60)",
+      "Bash(git check-ignore *)"
     ]
   }
 }

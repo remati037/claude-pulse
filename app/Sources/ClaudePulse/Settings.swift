@@ -46,6 +46,13 @@ struct Settings: Codable, Equatable {
     var waitingSound: String = "Ping"
     var volume: Double = 1.0
 
+    // Desktop watcher (Phase 4, §2.4) — AX detekcija Claude Desktop app-a
+    /// Case-insensitive substring koji identifikuje stop-generation dugme u AX tree-u.
+    /// Editabilan (ne hardkodiran) da preživi promenu Anthropic UI-ja bez update-a app-a.
+    var desktopStopLabelPattern: String = "stop"
+    /// Interval AX poll-a u sekundama (samo dok Claude app radi).
+    var desktopPollSeconds: Int = 2
+
     // Advanced
     /// `busy` koji visi duže od ovoga → `inactive` (hook/ekstenzija verovatno umrli, §2.3).
     var busyStuckThresholdMinutes: Int = 45

@@ -94,7 +94,7 @@ Kad se faza završi, štiklirati ovde:
 - [x] Phase 1 — StatusStore + HTTP server
 - [x] Phase 2 — Menu bar UI + meni
 - [x] Phase 3 — Notifikacije, zvuci, Settings, onboarding
-- [ ] Phase 4 — Desktop watcher (AX)
+- [x] Phase 4 — Desktop watcher (AX)
 - [ ] Phase 5 — Hooks installer
 - [ ] Phase 6 — Browser ekstenzija
 - [ ] Phase 7 — Distribucija

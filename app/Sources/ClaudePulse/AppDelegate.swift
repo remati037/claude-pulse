@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsStore: SettingsStore!
     private var statusStore: StatusStore!
     private var httpServer: HTTPServer!
+    private var desktopWatcher: DesktopWatcher!
 
     // Phase 3 servisi. Jake reference — žive koliko i app.
     private var notificationManager: NotificationManager!
@@ -24,7 +25,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusStore = StatusStore(settingsStore: settingsStore)
         notificationManager = NotificationManager(settingsStore: settingsStore)
         soundPlayer = SoundPlayer()
-        settingsWindow = SettingsWindowController(store: settingsStore, soundPlayer: soundPlayer)
+        desktopWatcher = DesktopWatcher(settingsStore: settingsStore, statusStore: statusStore)
+        settingsWindow = SettingsWindowController(store: settingsStore, soundPlayer: soundPlayer, desktopWatcher: desktopWatcher)
         onboardingWindow = OnboardingWindowController(
             notificationManager: notificationManager,
             soundPlayer: soundPlayer,
@@ -44,12 +46,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.soundPlayer.playWaiting(settings: self.settingsStore.settings)
         }
         statusStore.start()
+        desktopWatcher.start()
 
-        // Promena podešavanja → re-render menu bara + live restart servera na promeni porta.
+        // Promena podešavanja → re-render menu bara + live restart servera/watchera.
         settingsStore.onSettingsChanged = { [weak self] in
             guard let self else { return }
             self.renderStatusItem()
             self.httpServer?.restart(port: UInt16(self.settingsStore.settings.port))
+            self.desktopWatcher?.restart()   // pokupi promenu desktopPollSeconds
         }
 
         let port = UInt16(settingsStore.settings.port)
@@ -101,6 +105,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Red po izvoru (naziv + stanje + relativno vreme) sa submenijem.
         for source in Source.allCases {
             menu.addItem(sourceRow(for: source, settings: settings, now: now))
+            // Desktop bez AX dozvole → vidljiv hint odmah ispod reda (§2.4 tačka 4).
+            if source == .desktop, settings.desktop.enabled, !desktopWatcher.axPermissionGranted {
+                let hint = addItem(to: menu, title: "  ⚠︎ Grant Accessibility permission…",
+                                   action: #selector(grantAccessibility))
+                hint.toolTip = "ClaudePulse needs Accessibility permission to detect the Claude Desktop app."
+            }
         }
 
         menu.addItem(.separator())
@@ -145,6 +155,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         testItem.target = self
         testItem.representedObject = source.rawValue
         submenu.addItem(testItem)
+
+        // Desktop: diagnostic AX dump za empirijsko nalaženje stop-button labela (Phase 4).
+        if source == .desktop {
+            submenu.addItem(.separator())
+            let dumpItem = NSMenuItem(title: "Dump AX tree to log", action: #selector(dumpAXTree), keyEquivalent: "")
+            dumpItem.target = self
+            submenu.addItem(dumpItem)
+        }
 
         item.submenu = submenu
         return item
@@ -217,6 +235,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func resetAll() {
         statusStore.resetAll()
+    }
+
+    @objc private func grantAccessibility() {
+        desktopWatcher.requestPermission()
+    }
+
+    @objc private func dumpAXTree() {
+        desktopWatcher.dumpAXTree()
     }
 
     @objc private func toggleNotifications() {
