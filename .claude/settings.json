@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod +x scripts/*.sh)",
+      "Bash(bash scripts/build-app.sh)",
+      "Bash(codesign -dv ClaudePulse.app)",
+      "Bash(git add *)",
+      "Bash(git commit -q -m 'Phase 0: scaffold — repo layout + minimalni menu bar app \\(C✕ W✕ D✕\\) *)"
+    ]
+  }
+}
