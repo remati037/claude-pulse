@@ -311,3 +311,24 @@ Mac App Store-a (ADR-004). Zero third-party deps važi i za skripte (CLAUDE.md).
 za v1 open-source alat. `install.sh` je end-to-end proverljiv tek kad postoji živ GitHub Release
 (dotad: `bash -n` + pregled parsiranja). Migracija na Developer ID/notarizaciju je izolovana u
 `release.sh` ako v2 dobije nalog.
+
+---
+
+## ADR-014 — `.dmg` installer preko `hdiutil` (Phase 7, dopuna)
+
+**Status:** Prihvaćeno (2026-07-13, Phase 7)
+
+**Kontekst:** Uz `.zip` (curl installer) hoćemo i „pravo installer iskustvo" — klasičan
+drag-to-Applications DMG za korisnike koji ne diraju Terminal. Zero-dep princip važi i ovde.
+
+**Odluka:** `scripts/make-dmg.sh` gradi DMG isključivo preko **`hdiutil`** (ugrađen u macOS —
+nema `create-dmg`/brew zavisnosti). Staging folder = `ClaudePulse.app` + symlink `Applications`
+→ `hdiutil create -format UDZO` (kompresovan read-only) → ad-hoc `codesign` + SHA-256. DMG je
+dopunski asset na istom Release-u (`gh release upload`), ne zamena za `.zip`.
+
+**Posledice:** Dva puta instalacije sa različitim kompromisom: **`.zip` + `curl … | bash`** je
+najglatkiji (installer skida `xattr` karantin → nema Gatekeeper prompta), dok **`.dmg`** daje
+poznatiji GUI (prevuci u Applications) ali **vraća** Gatekeeper prompt (download karantinira DMG →
+right-click → Open prvi put). Oba su dokumentovana u README-u. Bogatiji DMG (pozadinska slika,
+raspoređene ikone) traži mount-rw + AppleScript Finder korake — namerno izostavljeno (krhko u
+headless/CI); čist UDZO DMG je dovoljan za v1.
