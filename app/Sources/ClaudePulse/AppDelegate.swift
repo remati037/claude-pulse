@@ -13,14 +13,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusStore: StatusStore!
     private var httpServer: HTTPServer!
 
+    // Phase 3 servisi. Jake reference — žive koliko i app.
+    private var notificationManager: NotificationManager!
+    private var soundPlayer: SoundPlayer!
+    private var settingsWindow: SettingsWindowController!
+    private var onboardingWindow: OnboardingWindowController!
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         settingsStore = SettingsStore()
         statusStore = StatusStore(settingsStore: settingsStore)
+        notificationManager = NotificationManager(settingsStore: settingsStore)
+        soundPlayer = SoundPlayer()
+        settingsWindow = SettingsWindowController(store: settingsStore, soundPlayer: soundPlayer)
+        onboardingWindow = OnboardingWindowController(
+            notificationManager: notificationManager,
+            soundPlayer: soundPlayer,
+            settingsStore: settingsStore
+        )
+
         statusStore.onChange = { [weak self] in self?.renderStatusItem() }
-        // Phase 3 stubovi (za sad samo log; notif/zvuk dolaze kasnije).
-        statusStore.onBusyToDone = { source in AppLog.info("TODO Phase 3: notify done for \(source.rawValue)") }
-        statusStore.onWaiting = { source in AppLog.info("TODO Phase 3: notify waiting for \(source.rawValue)") }
+        // Tranzicije → notifikacija + zvuk (tačno 1 svakog po eventu, §3.5).
+        statusStore.onBusyToDone = { [weak self] source, title in
+            guard let self else { return }
+            self.notificationManager.notifyDone(source: source, title: title)
+            self.soundPlayer.playDone(settings: self.settingsStore.settings)
+        }
+        statusStore.onWaiting = { [weak self] source, title in
+            guard let self else { return }
+            self.notificationManager.notifyWaiting(source: source, title: title)
+            self.soundPlayer.playWaiting(settings: self.settingsStore.settings)
+        }
         statusStore.start()
+
+        // Promena podešavanja → re-render menu bara + live restart servera na promeni porta.
+        settingsStore.onSettingsChanged = { [weak self] in
+            guard let self else { return }
+            self.renderStatusItem()
+            self.httpServer?.restart(port: UInt16(self.settingsStore.settings.port))
+        }
 
         let port = UInt16(settingsStore.settings.port)
         httpServer = HTTPServer(port: port, statusStore: statusStore)
@@ -32,6 +62,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.delegate = self
         statusItem.menu = menu
         renderStatusItem()
+
+        // Notifikacije + onboarding na prvom pokretanju (§3.6).
+        notificationManager.requestAuthorization()
+        if !settingsStore.settings.hasCompletedOnboarding {
+            onboardingWindow.show()
+        }
     }
 
     // MARK: - Menu bar ikona (§3.2)
@@ -76,11 +112,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(.separator())
 
         menu.addItem(displayModeRow(current: settings.displayMode))
-        addItem(to: menu, title: "Settings…", action: nil, enabled: false)      // Phase 3
-        addItem(to: menu, title: "Setup Guide…", action: nil, enabled: false)    // Phase 3
+        addItem(to: menu, title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
+        addItem(to: menu, title: "Setup Guide…", action: #selector(openSetupGuide))
         menu.addItem(.separator())
 
-        addItem(to: menu, title: "Launch at Login", action: nil, enabled: false) // Phase 3 (SMAppService)
+        addToggle(to: menu, title: "Launch at Login", isOn: LoginItem.isEnabled, action: #selector(toggleLaunchAtLogin))
         addItem(to: menu, title: "Quit \(appDisplayName)", action: #selector(quit), keyEquivalent: "q")
     }
 
@@ -105,8 +141,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         resetItem.representedObject = source.rawValue
         submenu.addItem(resetItem)
 
-        let testItem = NSMenuItem(title: "Test notification", action: nil, keyEquivalent: "") // Phase 3
-        testItem.isEnabled = false
+        let testItem = NSMenuItem(title: "Test notification", action: #selector(testNotification(_:)), keyEquivalent: "")
+        testItem.target = self
+        testItem.representedObject = source.rawValue
         submenu.addItem(testItem)
 
         item.submenu = submenu
@@ -198,6 +235,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func setDisplayIconOnly() {
         settingsStore.update { $0.displayMode = .iconOnly }
         renderStatusItem()
+    }
+
+    @objc private func openSettings() {
+        settingsWindow.show()
+    }
+
+    @objc private func openSetupGuide() {
+        onboardingWindow.show()
+    }
+
+    @objc private func toggleLaunchAtLogin() {
+        LoginItem.setEnabled(!LoginItem.isEnabled)
+    }
+
+    @objc private func testNotification(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let source = Source(rawValue: raw) else { return }
+        notificationManager.sendTest(source: source)
+        soundPlayer.playDone(settings: settingsStore.settings)
     }
 
     @objc private func quit() {

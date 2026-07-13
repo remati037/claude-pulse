@@ -93,7 +93,7 @@ Kad se faza završi, štiklirati ovde:
 - [x] Phase 0 — Scaffold
 - [x] Phase 1 — StatusStore + HTTP server
 - [x] Phase 2 — Menu bar UI + meni
-- [ ] Phase 3 — Notifikacije, zvuci, Settings, onboarding
+- [x] Phase 3 — Notifikacije, zvuci, Settings, onboarding
 - [ ] Phase 4 — Desktop watcher (AX)
 - [ ] Phase 5 — Hooks installer
 - [ ] Phase 6 — Browser ekstenzija

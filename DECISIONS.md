@@ -137,3 +137,39 @@ attributed-string naslov iz §3.2 (obojene tačke `C● W● D✕`), inače osta
 **Posledice:** Prezentacioni sloj bez novih zavisnosti. Disabled izvor se renderuje kao
 `inactive` (§1.2) preko `StatusRendering.effectiveState`. Čist mapping stanje→boja/glyph/tekst
 je centralizovan u `StatusRendering` i dele ga ikona i redovi menija.
+
+---
+
+## ADR-008 — SettingsStore reaktivnost: `ObservableObject`, ne `@Observable` (Phase 3)
+
+**Status:** Prihvaćeno (2026-07-13, Phase 3)
+
+**Kontekst:** SwiftUI Settings prozor (§3.4) mora da menja `Settings` uživo i da UI prati te
+promene. Moderni `@Observable` macro (Observation framework) traži macOS 14, a deployment
+target je macOS 13 (ADR-001).
+
+**Odluka:** `SettingsStore` je `@MainActor final class ... ObservableObject` sa
+`@Published private(set) var settings`. Postojeći `update { }` API ostaje (menu i StatusStore
+ga i dalje koriste), plus `replace(with:)` za import. `onSettingsChanged` callback javlja
+`AppDelegate`-u da re-renderuje menu bar i, na promeni porta, `httpServer.restart(port:)`.
+SwiftUI kontrole vežu preko jednog `binding(_:)` helpera koji zove `update { }` → auto-persist.
+
+**Posledice:** Radi na macOS 13. `@Published` dolazi iz Combine/Foundation bez third-party
+zavisnosti (zero-dep, ADR-003 duh). Migracija na `@Observable` je trivijalna kad target
+poraste na macOS 14 (v2).
+
+---
+
+## ADR-009 — Login item: `SMAppService.mainApp` (Phase 3)
+
+**Status:** Prihvaćeno (2026-07-13, Phase 3)
+
+**Kontekst:** „Launch at Login" (§3.4 General). Legacy `SMLoginItemSetEnabled` je deprecated i
+traži poseban helper bundle; app je min macOS 13.
+
+**Odluka:** `ServiceManagement.SMAppService.mainApp` — `register()` / `unregister()` / `status`
+registruju sam `.app` kao login item, bez helper bundle-a (macOS 13+ API).
+
+**Posledice:** Bez dodatnog helper target-a. Napomena: `register()` radi pouzdano tek kad je
+`.app` na stabilnoj lokaciji (npr. `/Applications`); iz repo foldera status može ostati
+`.requiresApproval` — ishod se loguje, korisnik odobrava u System Settings ▸ General ▸ Login Items.

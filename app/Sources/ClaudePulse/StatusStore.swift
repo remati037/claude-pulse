@@ -14,6 +14,8 @@ enum SourceState: String {
 struct SourceStatus {
     var state: SourceState = .inactive
     var lastEventAt: Date?
+    /// Poslednji `meta.title` (kontekst iz payload-a) — subtitle notifikacije (§3.5).
+    var title: String?
 }
 
 extension Settings {
@@ -50,9 +52,9 @@ final class StatusStore {
 
     /// Menu bar re-render (AppDelegate ga postavlja). Bez Combine — zero-dep (ADR-003 duh).
     var onChange: (() -> Void)?
-    /// Phase 3 stubovi: notifikacija + zvuk na tranzicijama. U Phase 1 se samo loguju.
-    var onBusyToDone: ((Source) -> Void)?
-    var onWaiting: ((Source) -> Void)?
+    /// Tranzicije: notifikacija + zvuk. `title` je poslednji `meta.title` (subtitle, §3.5).
+    var onBusyToDone: ((Source, String?) -> Void)?
+    var onWaiting: ((Source, String?) -> Void)?
 
     private let settingsStore: SettingsStore
 
@@ -109,7 +111,7 @@ final class StatusStore {
     // MARK: - Primena eventa
 
     /// Primeni event izvora (poziva HTTP handler nakon hop-a na main actor).
-    func apply(source: Source, state: SourceState) {
+    func apply(source: Source, state: SourceState, title: String? = nil) {
         let sourceSettings = settingsStore.settings.sourceSettings(for: source)
         guard sourceSettings.enabled else {
             AppLog.info("ignoring \(source.rawValue)=\(state.rawValue): source disabled")
@@ -121,18 +123,19 @@ final class StatusStore {
         var status = statuses[source] ?? SourceStatus()
         status.state = state
         status.lastEventAt = Date()
+        status.title = title
         statuses[source] = status
 
         AppLog.info("\(source.rawValue): \(previous.rawValue) → \(state.rawValue)")
 
-        // Tranzicije (Phase 3 stubovi).
+        // Tranzicije → notifikacija + zvuk (AppDelegate se kači na kukice).
         if previous == .busy, state == .done {
             AppLog.info("event: \(source.rawValue) busy→done")
-            onBusyToDone?(source)
+            onBusyToDone?(source, title)
         }
         if state == .waiting, previous != .waiting {
             AppLog.info("event: \(source.rawValue) waiting")
-            onWaiting?(source)
+            onWaiting?(source, title)
         }
 
         onChange?()

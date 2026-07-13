@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 /// Način prikaza u menu baru (§3.2).
 enum DisplayMode: String, Codable {
@@ -48,14 +49,27 @@ struct Settings: Codable, Equatable {
     // Advanced
     /// `busy` koji visi duže od ovoga → `inactive` (hook/ekstenzija verovatno umrli, §2.3).
     var busyStuckThresholdMinutes: Int = 45
+
+    // Onboarding
+    /// Prvo pokretanje pokazuje onboarding (§3.6); posle se dostavlja preko „Setup Guide…".
+    var hasCompletedOnboarding: Bool = false
 }
 
 /// Perzistencija `Settings`-a: JSON pod jednim ključem u `UserDefaults`.
-final class SettingsStore {
+///
+/// `ObservableObject` (ne `@Observable` macro — traži macOS 14, min je 13; vidi ADR-006) da
+/// SwiftUI Settings prozor menja vrednosti uživo. `@MainActor` jer mu pristupaju i menu bar UI
+/// i StatusStore (oba na main-u). `onSettingsChanged` javlja AppDelegate-u da re-renderuje menu
+/// bar i, ako se promenio port, restartuje HTTP server.
+@MainActor
+final class SettingsStore: ObservableObject {
     private static let defaultsKey = "settings"
 
     private let defaults: UserDefaults
-    private(set) var settings: Settings
+    @Published private(set) var settings: Settings
+
+    /// Poziva se posle svake `update`/`replace` — AppDelegate se kači ovde.
+    var onSettingsChanged: (() -> Void)?
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -70,6 +84,14 @@ final class SettingsStore {
     func update(_ mutate: (inout Settings) -> Void) {
         mutate(&settings)
         save()
+        onSettingsChanged?()
+    }
+
+    /// Zameni ceo `Settings` (import iz JSON-a, §3.4 Advanced).
+    func replace(with newSettings: Settings) {
+        settings = newSettings
+        save()
+        onSettingsChanged?()
     }
 
     func save() {

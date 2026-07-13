@@ -14,6 +14,9 @@ enum AppLog {
     /// Serijalni queue štiti file handle od konkurentnih upisa.
     private static let fileQueue = DispatchQueue(label: "\(subsystem).filelog")
 
+    /// Putanja log fajla — za „Open log file" u Settings ▸ Advanced (§3.4).
+    static var fileURL: URL { logFileURL }
+
     /// `~/Library/Logs/ClaudePulse/claudepulse.log`
     private static let logFileURL: URL = {
         let dir = FileManager.default

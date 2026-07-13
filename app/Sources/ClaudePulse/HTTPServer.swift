@@ -9,7 +9,7 @@ final class HTTPServer {
     /// Ceo request (headeri + telo) tvrdo ograničen da spori/zli klijent ne pojede memoriju.
     private static let maxRequestBytes = 16 * 1024
 
-    private let port: UInt16
+    private var port: UInt16
     private let statusStore: StatusStore
     private var listener: NWListener?
     private let queue = DispatchQueue(label: "com.marko.claudepulse.http")
@@ -45,6 +45,21 @@ final class HTTPServer {
         } catch {
             AppLog.error("HTTP server could not start on port \(port): \(error)")
         }
+    }
+
+    /// Ugasi listener (nove konekcije prestaju; postojeće se same zatvaraju sa `Connection: close`).
+    func stop() {
+        listener?.cancel()
+        listener = nil
+    }
+
+    /// Restart na novi port (live promena porta iz Settings-a, §3.4 General). No-op ako je port isti.
+    func restart(port newPort: UInt16) {
+        guard newPort != port else { return }
+        AppLog.info("HTTP server restarting: \(port) → \(newPort)")
+        stop()
+        port = newPort
+        start()
     }
 
     // MARK: - Konekcije
@@ -130,8 +145,9 @@ final class HTTPServer {
             return
         }
 
+        let title = payload.meta?.title
         Task { @MainActor in
-            self.statusStore.apply(source: source, state: state)
+            self.statusStore.apply(source: source, state: state, title: title)
         }
         respond(connection, status: 200, json: #"{"ok":true}"#)
     }
