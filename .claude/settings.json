@@ -5,7 +5,11 @@
       "Bash(bash scripts/build-app.sh)",
       "Bash(codesign -dv ClaudePulse.app)",
       "Bash(git add *)",
-      "Bash(git commit -q -m 'Phase 0: scaffold — repo layout + minimalni menu bar app \\(C✕ W✕ D✕\\) *)"
+      "Bash(git commit -q -m 'Phase 0: scaffold — repo layout + minimalni menu bar app \\(C✕ W✕ D✕\\) *)",
+      "Bash(git commit -q -m 'Mark Phase 0 complete in progress tracker *)",
+      "Bash(git push *)",
+      "Bash(git ls-remote *)",
+      "Bash(git commit -q -m 'Add git push permission to project settings *)"
     ]
   }
 }
