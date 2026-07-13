@@ -8,7 +8,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_SRC="$ROOT/app"
 APP_NAME="ClaudePulse"
 BUNDLE_ID="com.marko.claudepulse"
-VERSION="0.0.1"
+VERSION="${CLAUDEPULSE_VERSION:-1.0.0}"
 
 APP_BUNDLE="$ROOT/$APP_NAME.app"
 CONTENTS="$APP_BUNDLE/Contents"

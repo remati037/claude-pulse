@@ -10,9 +10,23 @@ kroz **Claude Code** (terminal / VS Code), **claude.ai u browseru** i **Claude D
 Po slotu: gray `✕` inactive · red `●` busy · orange `●` waiting · green `●` done.
 Na `busy → done` stiže macOS notifikacija (+ opcioni zvuk).
 
-> **Status:** u izradi. Phase 0 (scaffold) — minimalni menu bar app koji pokazuje
-> statično `C✕ W✕ D✕`. Detaljna arhitektura: [CLAUDE-NOTIFIER-PLAN.md](CLAUDE-NOTIFIER-PLAN.md),
-> fazni plan: [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md).
+> Detaljna arhitektura: [CLAUDE-NOTIFIER-PLAN.md](CLAUDE-NOTIFIER-PLAN.md),
+> odluke: [DECISIONS.md](DECISIONS.md), problemi: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+
+## Instalacija (korisnici)
+
+macOS 13+. One-line installer skine latest [Release](https://github.com/remati037/claude-pulse/releases),
+skine Gatekeeper karantin, instalira u `/Applications` i pokrene app:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/remati037/claude-pulse/master/scripts/install.sh | bash
+```
+
+App je ad-hoc potpisan (bez Apple Developer naloga), pa Gatekeeper zna da se buni. Installer to
+rešava sam (`xattr`). Ako radiš ručno preko preuzetog `.zip`-a i vidiš „unidentified developer":
+**desni klik na app → Open** (jednom), ili `xattr -dr com.apple.quarantine /Applications/ClaudePulse.app`.
+
+Ikona se pojavi u menu baru gore desno. Zatim poveži izvore (dole).
 
 ## Build (dev)
 
@@ -29,10 +43,10 @@ Ikona se pojavi u menu baru gore desno. Za samo build bez pokretanja: `bash scri
 
 ```
 app/         Swift menu bar app (SwiftUI + AppKit, SwiftPM executable)
-extension/   Chrome/Chromium MV3 ekstenzija za claude.ai  (Phase 6)
-hooks/       Claude Code hook installer (install-hooks.sh)  (Phase 5)
-scripts/     build-app.sh, dev-run.sh (kasnije release.sh, install.sh)
-docs/        TROUBLESHOOTING.md                             (Phase 7)
+extension/   Chrome/Chromium MV3 ekstenzija za claude.ai
+hooks/       Claude Code hook installer (install-hooks.sh)
+scripts/     build-app.sh, dev-run.sh, release.sh, install.sh
+docs/        TROUBLESHOOTING.md
 ```
 
 ## Claude Code (hooks)
@@ -75,6 +89,12 @@ Default selektor: `button[aria-label*="Stop"]`.
 
 Ikone se generišu skriptom: `python3 scripts/gen-extension-icons.py`.
 
-## Instalacija za korisnike
+## Release (održavaoci)
 
-Dolazi u Phase 7 (GitHub Release + one-line installer). Zasad samo dev build gore.
+```bash
+bash scripts/release.sh 1.0.0        # build → dist/ClaudePulse-v1.0.0.zip + .sha256
+```
+
+Skripta ispiše `gh release create …` komandu koju pokreneš ručno da objaviš Release
+(one-line installer gore povlači latest release). Distribucija je ad-hoc potpisana, van
+Mac App Store-a (vidi [ADR-013](DECISIONS.md)).

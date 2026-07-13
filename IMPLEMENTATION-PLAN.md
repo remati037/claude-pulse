@@ -98,4 +98,4 @@ Kad se faza završi, štiklirati ovde:
 - [x] Phase 4 — Desktop watcher (AX)
 - [x] Phase 5 — Hooks installer
 - [x] Phase 6 — Browser ekstenzija
-- [ ] Phase 7 — Distribucija
+- [x] Phase 7 — Distribucija

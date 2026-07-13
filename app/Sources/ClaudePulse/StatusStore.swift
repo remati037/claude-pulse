@@ -126,7 +126,11 @@ final class StatusStore {
         status.title = title
         statuses[source] = status
 
-        AppLog.info("\(source.rawValue): \(previous.rawValue) → \(state.rawValue)")
+        // Loguj samo stvarnu tranziciju; busy-refresh (npr. DesktopWatcher svakih 2 s,
+        // code/web heartbeat) osvežava lastEventAt/TTL bez zatrpavanja loga (§Phase 7).
+        if previous != state {
+            AppLog.info("\(source.rawValue): \(previous.rawValue) → \(state.rawValue)")
+        }
 
         // Tranzicije → notifikacija + zvuk (AppDelegate se kači na kukice).
         if previous == .busy, state == .done {

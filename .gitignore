@@ -5,6 +5,9 @@ Package.resolved
 # Built app bundle
 *.app/
 
+# Release artefakti (scripts/release.sh)
+dist/
+
 # macOS
 .DS_Store
 

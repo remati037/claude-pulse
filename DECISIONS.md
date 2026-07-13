@@ -279,3 +279,35 @@ umesto in-memory, pa svaki handler čita/piše storage. Detekcija app-down ima d
 (health interval), ali `post()` na grešci odmah sivi badge. Verifikacija busy/done ciklusa,
 multi-tab i lažni-done su interaktivni (realna claude.ai sesija); kontrakt (`web/busy`, `web/done`)
 i manifest lint autonomni curl-om.
+
+---
+
+## ADR-013 — Distribucija: ad-hoc potpis, GitHub Release, one-line installer (Phase 7)
+
+**Status:** Prihvaćeno (2026-07-13, Phase 7)
+
+**Kontekst:** Treba da čist korisnik instalira app + poveže tri izvora za <10 min. Nema Apple
+Developer naloga → nema Developer ID potpisa ni notarizacije. App nije sandboxovan i ide van
+Mac App Store-a (ADR-004). Zero third-party deps važi i za skripte (CLAUDE.md).
+
+**Odluka:**
+- **Verzija = jedna konstanta u `build-app.sh`** (`CLAUDEPULSE_VERSION`, default `1.0.0`) koja
+  stampuje `CFBundleShortVersionString`/`CFBundleVersion` u Info.plist. `GET /health` je čita iz
+  plist-a; `release.sh` samo export-uje env pre build-a → nema drugog mesta gde verzija „živi".
+- **`release.sh`**: `build-app.sh` (ad-hoc potpis) → `codesign --verify --deep --strict` sanity →
+  **`ditto -c -k --keepParent`** zip (ne `zip`, koji ume da polomi ad-hoc potpis / bundle simlinkove)
+  → `shasum -a 256` checksum fajl. Artefakti u `dist/` (gitignore-ovan). Release **ne** objavljuje
+  sam — ispiše predloženu `gh release create` komandu (outward + `gh` možda nije auth-ovan).
+- **`install.sh`** (one-line `curl … | bash`): latest release preko GitHub API-ja parsiran
+  `grep`/`sed`-om — **bez `jq`** (mora raditi na čistoj mašini; `jq` je preduslov samo za hookove).
+  Best-effort SHA-256 provera ako release nosi `.sha256` asset. `xattr -dr com.apple.quarantine`
+  skida Gatekeeper karantin (ADR-004 posledica), pa `mv` u `/Applications` + `open`. Repo slug
+  `remati037/claude-pulse` je override-abilan preko `CLAUDEPULSE_REPO`.
+- **Log higijena**: `StatusStore.apply` loguje transition liniju samo kad `previous != state` —
+  DesktopWatcher-ov busy-heartbeat (svakih 2 s) i dalje osvežava TTL, ali ne zatrpava log.
+
+**Posledice:** Instalacija bez Xcode-a/naloga, ali Gatekeeper friction ostaje za ručni download
+(README: right-click → Open). Bez notarizacije nema „provereno od Apple-a" statusa — prihvatljivo
+za v1 open-source alat. `install.sh` je end-to-end proverljiv tek kad postoji živ GitHub Release
+(dotad: `bash -n` + pregled parsiranja). Migracija na Developer ID/notarizaciju je izolovana u
+`release.sh` ako v2 dobije nalog.
