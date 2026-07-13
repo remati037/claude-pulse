@@ -89,9 +89,15 @@ Ako ne želiš da koristiš Terminal za app:
 1. Otvori **https://github.com/remati037/claude-pulse/releases/latest**.
 2. Skini **`ClaudePulse-v1.0.0.dmg`** i dupli klik.
 3. U prozoru koji se otvori **prevuci ClaudePulse u Applications**.
-4. Otvori app iz Applications. Prvi put: **desni klik na app → Open → Open** (jednom, da
-   preskočiš macOS upozorenje — app je besplatan/open-source pa nije „notarizovan" kod
-   Apple-a; potpuno je bezbedan).
+4. Otvori app iz Applications. Prvi put macOS pokaže upozorenje jer app nije „notarizovan"
+   kod Apple-a (besplatan/open-source, potpuno bezbedan) — to se preskače jednom:
+   - **macOS 15 Sequoia / 26 Tahoe:** klikni **Done** → **System Settings → Privacy &
+     Security** → dole kod „ClaudePulse was blocked" klikni **Open Anyway**.
+   - **macOS 13–14:** desni klik na app → **Open** → **Open**.
+   - _Ili preko Terminala (radi svuda):_ `xattr -dr com.apple.quarantine /Applications/ClaudePulse.app`
+
+> 💡 **Ako izbegavaš ove korake:** instaliraj preko **Koraka 1** (`curl … | bash`) — taj
+> installer skida karantin automatski, pa nema nikakvog upozorenja.
 
 Zatim uradi korake 2–4 gore za izvore koje koristiš.
 

@@ -3,13 +3,26 @@
 Najčešći problemi po izvoru. Log je uvek dobra prva stanica:
 `~/Library/Logs/ClaudePulse/claudepulse.log` (i „Open log file" u Settings ▸ Advanced).
 
-## Gatekeeper: „damaged" / „unidentified developer"
+## Gatekeeper: „Apple could not verify…" / „unidentified developer"
 
-App je ad-hoc potpisan (bez Apple Developer naloga), pa ga Gatekeeper karantinira posle
-download-a. One-line installer to rešava sam (`xattr -dr com.apple.quarantine`). Ručno:
+App nije notarizovan kod Apple-a (nema Apple Developer nalog), pa ga Gatekeeper karantinira
+posle download-a. **One-line `curl … | bash` installer to rešava sam** (skida `xattr` karantin →
+nema nijednog upozorenja) — to je najlakši put. Ako ipak koristiš `.dmg` ili ručni download:
 
-- **Desni klik na `ClaudePulse.app` → Open** (jednom), pa „Open" u dijalogu, ili
-- `xattr -dr com.apple.quarantine /Applications/ClaudePulse.app`
+**Najbrže (Terminal, radi na svakoj verziji macOS-a):** skini karantin sa preuzetog fajla,
+pa ga otvori. Za DMG:
+```bash
+xattr -dr com.apple.quarantine ~/Downloads/ClaudePulse-v1.0.0.dmg
+```
+ili za već instaliran app: `xattr -dr com.apple.quarantine /Applications/ClaudePulse.app`
+
+**Bez Terminala (macOS 13–14):** desni klik na app → **Open** → **Open** u dijalogu (jednom).
+
+**Bez Terminala (macOS 15 Sequoia / 26 Tahoe):** stari „right-click → Open" više ne radi.
+Umesto toga:
+1. Kad iskoči „Apple could not verify…", klikni **Done**.
+2. **System Settings → Privacy & Security** → skroluj do **Security**.
+3. Kod „ClaudePulse… was blocked" klikni **Open Anyway** → potvrdi Touch ID/lozinkom.
 
 ## Ikona se ne vidi u menu baru / notifikacije ne rade
 
