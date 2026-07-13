@@ -210,3 +210,37 @@ ako zatreba fino podešavanje.
 **Posledice:** Radi i kad Claude nije frontmost (prozori dostupni preko pid-a) — pokriva glavni
 use-case (korisnik odlutao u drugu app). Poznato ograničenje (§2.4): minimizovan prozor —
 ponašanje dokumentovati posle live testa. Zavisi od AX dozvole (ADR-004: app nije sandboxovan).
+
+---
+
+## ADR-011 — Claude Code hooks installer: marker-based idempotentan merge (Phase 5)
+
+**Status:** Prihvaćeno (2026-07-13, Phase 5)
+
+**Kontekst:** Claude Code (§2.6) javlja status preko hookova u `~/.claude/settings.json`. Taj
+fajl je korisnikov lični config (model, theme, eventualni custom hookovi) — CLAUDE.md zabranjuje
+overwrite i traži backup. Treba installer koji **spaja** 4 hooka (UserPromptSubmit/PreToolUse→busy,
+Notification→waiting, Stop→done), podržava `--uninstall` i `--port`, i preživljava ponovno
+pokretanje bez duplikata.
+
+**Odluka:**
+- **Marker `# claudepulse`** na kraju svake naše curl komande. Uninstall i re-install prepoznaju
+  naše hookove isključivo po markeru → custom hookovi korisnika ostaju netaknuti čak i kad promeni
+  port ili UI. Install = „ukloni sve `claudepulse` grupe (deljen REMOVE jq filter) → dodaj sveže"
+  (ADD jq filter) → **idempotentno** (verifikovano: 2× install = po jedna naša grupa po eventu).
+- **jq merge, nikad overwrite.** Zero-dep na Apple strani, ali installer je shell i `jq` je već
+  preduslov (§2.6, provera + `brew install jq` hint). REMOVE filter uklanja i prazne event nizove
+  i prazan `.hooks` objekat da ne ostavi smeće.
+- **Backup + atomičan upis:** `settings.json.backup-YYYYMMDD-HHMMSS` pre ijedne izmene; rezultat
+  se piše u `mktemp`, `jq empty` validira, pa tek `mv` preko originala. Nevalidan postojeći JSON →
+  odbij (exit 1) bez diranja fajla. Original se nikad ne vidi polupisan.
+- **`PreToolUse` sa `matcher: ""`** (svi tools); ostala tri eventa nemaju matcher (nisu tool-scoped).
+- **`source:"code"` + `busy/waiting/done`** — tačno ono što `HTTPServer.handleStatus` prihvata
+  (400 inače). Komanda je fail-silent (`>/dev/null 2>&1 || true`, `-m 2`) da hook nikad ne obori
+  Claude Code ako app nije upaljen. Port se ubrizgava u jq kroz `--arg` (bez string-lepljenja).
+- App **ne** pokreće installer sam (CLAUDE.md); onboarding korak 2 nudi kopiraj-nalepi komandu.
+
+**Posledice:** Bezbedan re-run i port-migracija; custom hookovi zagarantovano preživljavaju.
+Cena: marker mora ostati stabilan string (menjanje bi „osirotelo" stare hookove — tada ih uklanja
+ručni uninstall stare verzije). Verifikacija busy→waiting→done ciklusa je interaktivna (realna
+Claude Code sesija), ostalo (merge/idempotencija/uninstall/port) autonomno na izolovanoj kopiji.

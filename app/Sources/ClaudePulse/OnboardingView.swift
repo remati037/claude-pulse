@@ -3,8 +3,9 @@ import SwiftUI
 /// Onboarding u 3 koraka (§3.6). Svaki korak skippable; poziva `onFinish` na kraju/skip-u,
 /// što setuje `hasCompletedOnboarding` i zatvara prozor (AppDelegate).
 ///
-/// VAŽNO: korak 2 (hooks) je **samo informativan** — pravi installer je Phase 5, i CLAUDE.md
-/// zabranjuje diranje `~/.claude/settings.json` bez najave. Ovde nudimo copy-paste komandu.
+/// VAŽNO: korak 2 (hooks) je **samo informativan** — app ne pokreće installer sam (CLAUDE.md
+/// zabranjuje diranje `~/.claude/settings.json` bez korisnikove akcije). Nudimo komandu za
+/// pokretanje `hooks/install-hooks.sh` (koji radi backup + jq merge) i copy-paste curl fallback.
 struct OnboardingView: View {
     let requestNotifications: () -> Void
     let testSound: () -> Void
@@ -63,14 +64,17 @@ struct OnboardingView: View {
     private var hooksStep: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Claude Code (terminal)").font(.title2).bold()
-            Text("Claude Code reports status through hooks. The one-click installer arrives in a later version; for now you can add it manually.")
+            Text("Claude Code reports status through hooks. Run the bundled installer once — it backs up and merges into ~/.claude/settings.json (your custom hooks are preserved):")
                 .foregroundStyle(.secondary)
-            Text("curl -s -m 2 -X POST http://127.0.0.1:4242/status -H 'Content-Type: application/json' -d '{\"source\":\"code\",\"state\":\"done\"}'")
+            Text("bash hooks/install-hooks.sh")
                 .font(.system(.caption, design: .monospaced))
                 .textSelection(.enabled)
                 .padding(8)
                 .background(Color.secondary.opacity(0.12))
                 .clipShape(RoundedRectangle(cornerRadius: 6))
+            Text("Undo anytime with  bash hooks/install-hooks.sh --uninstall")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

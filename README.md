@@ -30,10 +30,29 @@ Ikona se pojavi u menu baru gore desno. Za samo build bez pokretanja: `bash scri
 ```
 app/         Swift menu bar app (SwiftUI + AppKit, SwiftPM executable)
 extension/   Chrome/Chromium MV3 ekstenzija za claude.ai  (Phase 6)
-hooks/       Claude Code hook installer                    (Phase 5)
+hooks/       Claude Code hook installer (install-hooks.sh)  (Phase 5)
 scripts/     build-app.sh, dev-run.sh (kasnije release.sh, install.sh)
 docs/        TROUBLESHOOTING.md                             (Phase 7)
 ```
+
+## Claude Code (hooks)
+
+Da C slot reaguje na Claude Code sesije, instaliraj hookove (spajaju se u
+`~/.claude/settings.json`, nikad ne pregaze — pravi se timestamped backup pre izmene):
+
+```bash
+bash hooks/install-hooks.sh              # default port 4242
+bash hooks/install-hooks.sh --port 9999  # ako si promenio port u Settings-u
+bash hooks/install-hooks.sh --uninstall  # ukloni samo ClaudePulse hookove
+```
+
+Dodaje 4 hooka: `UserPromptSubmit`/`PreToolUse` → busy, `Notification` → waiting,
+`Stop` → done. Svaki je fail-silent (ne obori Claude Code ako app nije upaljen) i nosi
+marker `# claudepulse` po kome ih uninstall/re-install prepoznaje. Tvoji custom hookovi
+ostaju netaknuti. Re-run je idempotentan (bez duplikata). Zahteva `jq` (`brew install jq`).
+
+Backup se pravi kao `~/.claude/settings.json.backup-<timestamp>`; ručno vraćanje:
+`cp ~/.claude/settings.json.backup-<timestamp> ~/.claude/settings.json`.
 
 ## Instalacija za korisnike
 

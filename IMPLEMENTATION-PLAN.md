@@ -77,6 +77,7 @@ Svaka faza: implementiraj → verifikuj sam → **checkpoint poruka korisniku** 
 
 ### Phase 7 — Distribucija
 - `scripts/release.sh` (release build, zip, SHA-256, version stamp), `scripts/install.sh` (download latest release, `xattr -dr com.apple.quarantine`, → /Applications, launch).
+- Prigušiti ponovljene `desktop: busy → busy` log linije iz DesktopWatcher-a (loguje se svakih 2 s tokom generisanja; osvežava TTL ali zatrpava log) — npr. logovati samo stvarne tranzicije stanja.
 - README polish (setup za sva tri izvora, Gatekeeper right-click→Open), `docs/TROUBLESHOOTING.md` (port konflikt, AX label override, selector override).
 - GitHub repo/Release — pitati korisnika za repo ime/kreiranje kad se dođe dovde.
 - **Done:** čist korisnik prati README → sva tri izvora rade za <10 min.
@@ -95,6 +96,6 @@ Kad se faza završi, štiklirati ovde:
 - [x] Phase 2 — Menu bar UI + meni
 - [x] Phase 3 — Notifikacije, zvuci, Settings, onboarding
 - [x] Phase 4 — Desktop watcher (AX)
-- [ ] Phase 5 — Hooks installer
+- [x] Phase 5 — Hooks installer
 - [ ] Phase 6 — Browser ekstenzija
 - [ ] Phase 7 — Distribucija
